@@ -7,9 +7,9 @@ spring:
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
     dynamic:
-      primary: mysql-base  # 默认数据源
-      strict: true         # 严格模式：未知数据源名称直接报错，不静默回退
-      lazy: true           # 懒加载：启动时不验证连接，首次使用时才连接
+      primary: mysql-base # 默认数据源
+      strict: true # 严格模式：未知数据源名称直接报错，不静默回退
+      lazy: true # 懒加载：启动时不验证连接，首次使用时才连接
       datasource:
         mysql-base:
           type: ${spring.datasource.type}
@@ -35,5 +35,5 @@ spring:
             keepalive-time: 120000
 
 datasourcedesc:
-  mysql-base: mysql 语法 连接库 baseframe
-  oceanbase-cim: oracle 语法
+  mysql-base: 使用mysql 语法 连接库 baseframe
+  oceanbase-cim: oracle版本的oceanbase 使用 oracle 语法
