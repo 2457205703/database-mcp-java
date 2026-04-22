@@ -1,0 +1,39 @@
+server:
+  port: 28081
+
+spring:
+  application:
+    name: database-mcp-java
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    dynamic:
+      primary: mysql-base  # 默认数据源
+      strict: true         # 严格模式：未知数据源名称直接报错，不静默回退
+      lazy: true           # 懒加载：启动时不验证连接，首次使用时才连接
+      datasource:
+        mysql-base:
+          type: ${spring.datasource.type}
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://<your-mysql-host>:<your-mysql-port>/your_database?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&autoReconnect=true&rewriteBatchedStatements=true&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true
+          username: <your-username>
+          password: <your-password>
+          hikari:
+            connection-test-query: SELECT 1
+            validation-timeout: 5000
+            max-lifetime: 600000
+            keepalive-time: 120000
+        oceanbase-cim:
+          type: ${spring.datasource.type}
+          driver-class-name: com.oceanbase.jdbc.Driver
+          url: jdbc:oceanbase://<your-oceanbase-host>:<your-oceanbase-port>/your_schema
+          username: <your-username>
+          password: <your-password>
+          hikari:
+            connection-test-query: SELECT 1 FROM DUAL
+            validation-timeout: 5000
+            max-lifetime: 600000
+            keepalive-time: 120000
+
+datasourcedesc:
+  mysql-base: mysql 语法 连接库 baseframe
+  oceanbase-cim: oracle 语法
