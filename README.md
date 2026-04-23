@@ -5,7 +5,7 @@
 - **框架**: Spring Boot 3.4.4 + Spring AI 1.0.0-M7
 - **Java版本**: 21
 - **构建工具**: Maven
-- **协议**: SSE (Server-Sent Events)
+- **传输协议**: HTTP (JSON-RPC 2.0)
 - **默认端口**: 28081
 
 ## 功能
@@ -77,21 +77,26 @@ java -jar target/database-mcp-java-1.0.0-SNAPSHOT.jar
 {
   "mcpServers": {
     "database-mcp-java": {
-      "type": "sse",
-      "url": "http://localhost:28081/sse"
+      "type": "http",
+      "url": "http://localhost:28081/mcp/rpc"
     }
   }
 }
 ```
 
+使用 HTTP 请求/响应模式，每个调用独立完成，无需维持长连接，比 SSE 更稳定可靠。
+
 ## 项目结构
 
 ```
 src/main/java/com/example/mcp/
-├── McpServerApplication.java         # 主启动类
+├── McpServerApplication.java         # 主启动类（已排除 SSE 自动配置）
+├── controller/
+│   └── HttpMcpController.java        # HTTP MCP 控制器（JSON-RPC）
 ├── config/
 │   ├── DatabaseMcpToolProvider.java  # 数据库工具注册
-│   └── GenMcpToolProvider.java       # 代码生成工具注册
+│   ├── GenMcpToolProvider.java       # 代码生成工具注册
+│   └── DataSourceKeepAliveConfig.java # 数据源连接池保活
 ├── service/
 │   └── DynamicDataSourceService.java # 动态数据源服务
 ├── tool/
