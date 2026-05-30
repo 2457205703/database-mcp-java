@@ -18,10 +18,13 @@ spring:
           username: <your-username>
           password: <your-password>
           hikari:
+            minimum-idle: 2
+            maximum-pool-size: 10
             connection-test-query: SELECT 1
             validation-timeout: 5000
             max-lifetime: 600000
             keepalive-time: 120000
+            connection-timeout: 10000
         oceanbase-cim:
           type: ${spring.datasource.type}
           driver-class-name: com.oceanbase.jdbc.Driver
@@ -29,11 +32,18 @@ spring:
           username: <your-username>
           password: <your-password>
           hikari:
+            minimum-idle: 2
+            maximum-pool-size: 10
             connection-test-query: SELECT 1 FROM DUAL
             validation-timeout: 5000
             max-lifetime: 600000
             keepalive-time: 120000
+            connection-timeout: 10000
 
 datasourcedesc:
-  mysql-base: 使用mysql 语法 连接库 baseframe
-  oceanbase-cim: oracle版本的oceanbase 使用 oracle 语法
+  mysql-base: mysql 语法 连接库 baseframe
+  oceanbase-cim: oracle 语法
+
+# logging:
+#   level:
+#     io.modelcontextprotocol.spec.McpServerSession: WARN
