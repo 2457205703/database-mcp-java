@@ -1,82 +1,121 @@
-# CLAUDE.md
+# database-mcp-java
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+基于 **Spring Boot 3 + Spring AI** 的 MCP (Model Context Protocol) 服务器，提供数据库操作和代码生成能力。支持多数据源动态切换（MySQL / OceanBase / Oracle / PostgreSQL / SQL Server），通过 HTTP 协议对外暴露 MCP 工具。
 
-## 项目概述
+## 特性
 
-这是一个基于 **Spring AI** 的 **MCP (Model Context Protocol)** 服务器项目，用于提供数据库操作和工具服务。
+- **多数据源**：基于 `dynamic-datasource-spring-boot-starter` 动态切换，配置即用
+- **数据库操作**：建表 DDL、查询表结构、执行 SQL、跨库查询
+- **代码生成**：根据表结构一键生成 Java 后端（Controller/Service/Mapper/Domain/VO/BO）+ Vue3 前端 + TS API
+- **连接池保活**：`DataSourceKeepAliveConfig` 定时心跳检测，防止长时间空闲连接断开
+- **HTTP 传输**：`HttpMcpController` 实现 Streamable HTTP MCP 协议，兼容 Claude Code / Cursor 等客户端
 
-- **框架**: Spring Boot 3.4.4 + Spring AI 1.0.0-M7
-- **Java版本**: 21
-- **构建工具**: Maven
-- **协议**: SSE (Server-Sent Events)
-- **默认端口**: 28081
+## 技术栈
 
-## 常用命令
+| 依赖 | 版本 | 用途 |
+|------|------|------|
+| Spring Boot | 3.4.4 | 基础框架 |
+| Spring AI | 1.0.0-M7 | MCP 工具注册与调用 |
+| dynamic-datasource | 4.3.1 | 多数据源动态切换 |
+| Velocity | 2.3 | 代码生成模板引擎 |
+| HikariCP | — | 连接池（Spring Boot 内置） |
 
-```bash
-# 编译项目
-mvn compile
+## 快速开始
 
-# 打包项目
-mvn package
+### 1. 配置数据源
 
-# 运行项目
-mvn spring-boot:run
+编辑 `src/main/resources/application.yml`，替换为你的数据库信息：
 
-# 或直接运行 jar
-java -jar target/database-mcp-java-1.0.0-SNAPSHOT.jar
-
-# 清理构建
-mvn clean
+```yaml
+spring:
+  datasource:
+    dynamic:
+      primary: mysql-base
+      datasource:
+        mysql-base:
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://<host>:<port>/<database>
+          username: <username>
+          password: <password>
+        # 可继续添加其他数据源 ...
 ```
 
-## 架构说明
+### 2. 启动
 
-### 核心组件
+```bash
+mvn spring-boot:run
+```
+
+服务运行在 `http://localhost:28081`。
+
+### 3. 接入 AI 客户端
+
+**Claude Code**（`.claude/settings.json`）：
+
+```json
+{
+  "mcpServers": {
+    "database-mcp": {
+      "type": "url",
+      "url": "http://localhost:28081/mcp"
+    }
+  }
+}
+```
+
+**Cursor**：
+
+```json
+{
+  "mcpServers": {
+    "database-mcp": {
+      "url": "http://localhost:28081/mcp",
+      "transport": "streamable-http"
+    }
+  }
+}
+```
+
+## 项目结构
 
 ```
 src/main/java/com/example/mcp/
-├── McpServerApplication.java    # 主启动类，注册工具
-└── tool/                         # 工具类目录
-    └── HelloTool.java            # 示例工具
+├── McpServerApplication.java              # 启动类
+├── config/
+│   ├── DatabaseMcpToolProvider.java       # 数据库工具注册
+│   ├── GenMcpToolProvider.java            # 代码生成工具注册
+│   └── DataSourceKeepAliveConfig.java     # 连接池保活
+├── controller/
+│   └── HttpMcpController.java            # HTTP MCP 端点
+├── context/
+│   └── DataSourceContext.java            # 当前数据源上下文
+├── service/
+│   └── DynamicDataSourceService.java     # 数据源管理
+├── tool/
+│   ├── DatabaseMcpTool.java              # 数据库操作工具
+│   └── GenCodeTool.java                  # 代码生成工具
+└── gen/
+    ├── model/                            # 表结构模型
+    ├── util/                             # Velocity 模板工具
+    └── constant/                         # 生成常量
+
+src/main/resources/
+├── application.yml                       # 数据源配置
+└── vm/                                   # 代码生成模板
+    ├── java/    # BO/Controller/Domain/Mapper/Service/VO
+    ├── vue/     # index.vue / index-tree.vue
+    ├── ts/      # api.ts / types.ts
+    ├── xml/     # mapper.xml
+    └── sql/     # DDL 模板（MySQL/Oracle/PostgreSQL/SQL Server）
 ```
 
-### 添加新工具的步骤
+## MCP 工具列表
 
-1. 在 `com.example.mcp.tool` 包下创建新类
-2. 使用 `@Component` 注解标记类
-3. 使用 `@Tool(description = "描述")` 注解标记方法
-4. 在 `McpServerApplication.tools()` 方法中注册新工具
+| 工具 | 说明 |
+|------|------|
+| DatabaseMcpTool | 数据库查询、DDL 执行、表结构查看、多数据源切换 |
+| GenCodeTool | 根据表结构生成前后端代码（Java + Vue3 + TS + XML） |
 
-示例:
-```java
-@Component
-public class MyTool {
-    @Tool(description = "工具描述")
-    public String myMethod(String param) {
-        return "result";
-    }
-}
-```
+## License
 
-然后在 `McpServerApplication.java` 中:
-```java
-@Bean
-public ToolCallbackProvider tools(HelloTool helloTool, MyTool myTool) {
-    return MethodToolCallbackProvider.builder()
-            .toolObjects(helloTool, myTool)
-            .build();
-}
-```
-
-### MCP 端点配置
-
-- SSE 端点: `http://localhost:28081/sse`
-- 消息路径: `/mcp/message`
-
-配置位于 `src/main/resources/application.yml`。
-
-## 依赖说明
-
-项目使用 Spring Milestones 仓库获取 Spring AI 里程碑版本。如果 `mvn compile` 报找不到依赖，确认 `pom.xml` 中的仓库配置存在。
+MIT
