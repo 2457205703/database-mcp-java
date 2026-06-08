@@ -39,10 +39,25 @@ spring:
             max-lifetime: 600000
             keepalive-time: 120000
             connection-timeout: 10000
+        pgsql-dev:
+          type: ${spring.datasource.type}
+          driver-class-name: org.postgresql.Driver
+          url: jdbc:postgresql://<your-pgsql-host>:<your-pgsql-port>/your_database?currentSchema=public&stringtype=unspecified
+          username: <your-username>
+          password: <your-password>
+          hikari:
+            minimum-idle: 2
+            maximum-pool-size: 10
+            connection-test-query: SELECT 1
+            validation-timeout: 5000
+            max-lifetime: 600000
+            keepalive-time: 120000
+            connection-timeout: 10000
 
 datasourcedesc:
   mysql-base: mysql 语法 连接库 baseframe
   oceanbase-cim: oracle 语法
+  pgsql-dev: postgresql 语法
 
 # logging:
 #   level:
